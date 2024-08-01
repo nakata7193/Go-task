@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: k8s-reader
+    labels:
+        app: k8s-reader
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: k8s-reader
+    template:
+        metadata:
+            labels:
+                app: k8s-reader
+        spec:
+            containers:
+            -   name: k8s-reader
+                image: k8s-reader
+                imagePullPolicy: Never
+                ports:
+                -   containerPort: 8081

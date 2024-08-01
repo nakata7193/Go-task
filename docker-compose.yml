@@ -1,0 +1,36 @@
+version: '3.4'
+
+services:
+  pubsub:
+    image: messagebird/gcloud-pubsub-emulator
+    environment:
+      PUBSUB_PROJECT1: 'pubsubproject,published-events:published-events-pull'
+    ports:
+      - "8681:8681"
+
+  publisher:
+    build: ./publisher
+    ports:
+        - 8080:8080
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8681
+      PROJECT_ID: pubsubproject
+      TOPIC_ID: published-events
+    volumes:
+        - ./publisher/:/workspace
+    depends_on: 
+    - pubsub
+
+  reader:
+    build: ./reader
+    ports:
+        - 8081:8081
+    environment:
+      PUBSUB_EMULATOR_HOST: pubsub:8681
+      PROJECT_ID: pubsubproject
+      TOPIC_ID: published-events
+      SUBSCRIPTION_ID: published-events-pull
+    volumes:
+        - ./reader/:/workspace
+    depends_on: 
+    - pubsub

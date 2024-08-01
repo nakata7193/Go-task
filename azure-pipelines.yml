@@ -1,0 +1,76 @@
+trigger:
+  branches:
+    include:
+      - main
+
+stages:
+- stage: Lint
+  jobs:
+  - job: Lint
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UseGoVersion@0
+      inputs:
+        version: '1.17'
+      displayName: 'Install Go'
+
+    - script: |
+        go install golang.org/x/lint/golint@latest
+        golint ./...
+      displayName: 'Lint the code'
+
+
+- stage: Build
+  dependsOn: Lint
+  condition: succeeded()
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UseGoVersion@0
+      inputs:
+        version: '1.22'
+      displayName: 'Install Go'
+
+    - script: |
+        go mod tidy
+      displayName: 'Install dependencies'
+
+    - script: |
+        go build -o myapp
+      displayName: 'Build the project'
+
+- stage: Test
+  dependsOn: Build
+  jobs:
+  - job: Test
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: UseGoVersion@0
+      inputs:
+        version: '1.22'
+      displayName: 'Install Go'
+
+    - script: |
+        go test ./...
+      displayName: 'Run unit tests'
+
+- stage: Push
+  dependsOn: Test
+  condition: succeeded()
+  jobs:
+  - job: Push
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: |
+        git config user.email "test@example.com"
+        git config user.name "Your Name"
+        git remote set-url origin https://$(System.AccessToken)@github.com/your-repo.git
+        git push origin main
+      displayName: 'Push changes to repository'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
